@@ -7,13 +7,13 @@ from collect import collect_follower, collect_following
 
 
 def collect_me():
-    followers = utils.load_links(conf.FOLLOWER_FILE)
+    followers = set()
     targets = collect_follower(conf.ME)
     for target in targets:
         followers.add(target)
     utils.save_links(followers, conf.FOLLOWER_FILE)
 
-    following = utils.load_links(conf.FOLLOWING_FILE)
+    following = set()
     targets = collect_following(conf.ME)
     for target in targets:
         following.add(target)
