@@ -33,6 +33,9 @@ def follow():
     print 'Load %s targets' % len(targets)
     targets = targets.difference(already_follow)
     print 'Found %s difference targets' % len(targets)
+    blacklist = utils.load_links(conf.BLACKLIST_FILE)
+    targets = targets.difference(blacklist)
+    print 'Found %s new targets' % len(targets)
     browser = utils.login(conf.LOGIN, conf.PASSWORD)
     for link in targets:
         try:
