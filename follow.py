@@ -32,10 +32,16 @@ def follow():
     targets = utils.load_links(conf.TARGETS_FILE)
     print 'Load %s targets' % len(targets)
     targets = targets.difference(already_follow)
-    print 'Found %s difference targets' % len(targets)
+    print 'Found %s potential targets' % len(targets)
     blacklist = utils.load_links(conf.BLACKLIST_FILE)
+    follower = utils.load_links(conf.FOLLOWER_FILE)
+    clear_blacklist = follower.intersection(blacklist)
+    for user in clear_blacklist:
+        blacklist.remove(user)
+    print 'Clear %s blacklist' % len(clear_blacklist)
+    utils.save_links(blacklist, conf.BLACKLIST_FILE)
     targets = targets.difference(blacklist)
-    print 'Found %s new targets' % len(targets)
+    print 'Found %s new different targets' % len(targets)
     browser = utils.login(conf.LOGIN, conf.PASSWORD)
     for link in targets:
         try:
