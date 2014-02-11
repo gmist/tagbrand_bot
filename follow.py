@@ -3,6 +3,7 @@
 
 import os
 
+import grab
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions as selexcept
@@ -43,36 +44,50 @@ def follow():
     targets = targets.difference(blacklist)
     print 'Found %s new different targets' % len(targets)
     browser = utils.login(conf.LOGIN, conf.PASSWORD)
+    grab_ = grab.Grab()
     for link in targets:
+        if 'http://tagbrand.com/id' in link:
+            continue
+        id_ = None
+        likes = []
         try:
-            browser.get(link)
-            WebDriverWait(browser, timeout=10).until(utils.readystate_complete)
-            follow_btn = browser.find_element_by_class_name('follow')
-            follow_btn.find_element_by_link_text('follow')
-            browser.execute_script('window.scroll(0,200);')
-            likes = browser.find_elements_by_class_name('photo-like')
-            for i, like in enumerate(likes):
-                if i >= 3:
-                    break
-                class_ = like.get_attribute('class')
-                if 'voted' not in class_:
-                    like.send_keys(Keys.RETURN)
-            browser.execute_script(
-                'document.body.scrollTop = '
-                'document.documentElement.scrollTop = 0;'
-            )
-            follow_btn.click()
-            utils.wait(1)
-            already_follow.add(link)
-        except selexcept.NoSuchElementException:
-            print 'Invalid user or already followed, skip him %s' % link
+            try:
+                grab_.go(link)
+                div = grab_.doc.select(
+                        '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
+                id_ = div.attr('data-user')
+                try:
+                    likes = grab_.doc.select(
+                            '//*[@id="content"]/div[*]/div[3]/div/div[1]')\
+                                    .attr_list('photo-id')
+                except grab.error.DataNotFound, ex:
+                    likes = []
+            except grab.error.DataNotFound, ex:
+                print 'Skip %s - %s' % (link, ex)
+                continue
+            if id_:
+                browser.execute_script(
+                '$.post("http://tagbrand.com/followers/follow", {userId:%s});'\
+                        % id_)
+                likes = likes[:2]
+                browser.execute_script('$.ajaxSetup({async: false});')
+                for like in likes:
+                    res = browser.execute_script(
+                        'var res;\
+                        $.post("http://tagbrand.com/photos/ajaxVote",\
+                        {photoId:%s, userId:%s},\
+                        function(data){res=data});return res;' % (like, id_))
+                    if res and 'voted' not in res:
+                        browser.execute_script(
+                        '$.post("http://tagbrand.com/photos/ajaxVote",\
+                        {photoId:%s, userId:%s})' % (like, id_))
+                browser.execute_script('$.ajaxSetup({async: true});')
+
         except selexcept.WebDriverException:
             print 'Lost session? Try to reconnect'
             browser.quit()
             utils.wait(3)
             browser = utils.login(conf.LOGIN, conf.PASSWORD)
-        except Exception, ex:
-            print 'Skip %s - %s' % (link, ex)
 
 if __name__ == '__main__':
     follow()
