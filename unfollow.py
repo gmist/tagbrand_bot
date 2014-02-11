@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
 from selenium.common import exceptions as selexcept
-
+import grab
 import conf
 import utils
 import collect_me
@@ -20,22 +19,26 @@ def unfollow():
     utils.save_links(blacklist, conf.BLACKLIST_FILE)
     print 'Prepare to unfollow %s users' % len(to_unfollow)
     browser = utils.login(conf.LOGIN, conf.PASSWORD)
+    grab_ = grab.Grab()
     for link in to_unfollow:
-        try:
-            browser.get(link)
-            unfollow_btn = browser.find_element_by_class_name('follow')
-            unfollow_btn.find_element_by_link_text('unfollow')
-            unfollow_btn.click()
-            utils.wait(1)
-        except selexcept.NoSuchElementException:
-            continue
-        except selexcept.WebDriverException:
-            print 'Lost session? Try to recconect.'
-            browser.quit()
-            utils.wait(1)
-            browser = utils.login(conf.LOGIN, conf.PASSWORD)
-        except Exception, ex:
-            print 'Skip %s - %s' % (link, ex)
+        if 'http://tagbrand.com/id' in link:
+            id_ = link.split('http://tagbrand.com/id')[1]
+            if not id:
+                print 'Skip %s - %s' % (link)
+                continue
+        else:
+            try:
+                grab_.go(link)
+                div = grab_.doc.select(
+                        '/html/body/div/div[4]/div/div[2]/div[5]/div').one()
+                id_ = div.attr('data-user')
+            except grab.error.DataNotFound, ex:
+                print 'Skip %s - %s' % (link, ex)
+                continue
+        if id_:
+            browser.execute_script(
+            '$.post("http://tagbrand.com/followers/unfollow", {userId:%s});'\
+                    % id_)
 
 if __name__ == '__main__':
     unfollow()
