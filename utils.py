@@ -62,6 +62,20 @@ def login(email, password):
     return browser
 
 
+def like_photo(browser, user_id, photo_id):
+    browser.execute_script('$.ajaxSetup({async: false});')
+    res = browser.execute_script(
+        'var res;\
+        $.post("http://tagbrand.com/photos/ajaxVote",\
+        {photoId:%s, userId:%s},\
+        function(data){res=data});return res;' % (photo_id, user_id)
+    )
+    browser.execute_script('$.ajaxSetup({async: true});')
+    if not res or 'voted' not in res:
+        return False
+    return True
+
+
 def ajax_complete(driver):
     try:
         return 0 == driver.execute_script("return jQuery.active")

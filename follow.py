@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
-
 import grab
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.keys import Keys
 from selenium.common import exceptions as selexcept
 
 import conf
@@ -48,40 +44,32 @@ def follow():
     for link in targets:
         if 'http://tagbrand.com/id' in link:
             continue
-        id_ = None
+        user_id = None
         likes = []
         try:
             try:
                 grab_.go(link)
                 div = grab_.doc.select(
-                        '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
-                id_ = div.attr('data-user')
+                    '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
+                user_id = div.attr('data-user')
                 try:
                     likes = grab_.doc.select(
-                            '//*[@id="content"]/div[*]/div[3]/div/div[1]')\
-                                    .attr_list('photo-id')
+                        '//*[@id="content"]/div[*]/div[3]/div/div[1]')\
+                        .attr_list('photo-id')
                 except grab.error.DataNotFound, ex:
                     likes = []
             except grab.error.DataNotFound, ex:
                 print 'Skip %s - %s' % (link, ex)
                 continue
-            if id_:
+            if user_id:
                 browser.execute_script(
-                '$.post("http://tagbrand.com/followers/follow", {userId:%s});'\
-                        % id_)
+                    '$.post(\
+                        "http://tagbrand.com/followers/follow",\
+                        {userId:%s});' % user_id)
                 likes = likes[:2]
-                browser.execute_script('$.ajaxSetup({async: false});')
-                for like in likes:
-                    res = browser.execute_script(
-                        'var res;\
-                        $.post("http://tagbrand.com/photos/ajaxVote",\
-                        {photoId:%s, userId:%s},\
-                        function(data){res=data});return res;' % (like, id_))
-                    if res and 'voted' not in res:
-                        browser.execute_script(
-                        '$.post("http://tagbrand.com/photos/ajaxVote",\
-                        {photoId:%s, userId:%s})' % (like, id_))
-                browser.execute_script('$.ajaxSetup({async: true});')
+                for photo_id in likes:
+                    if not utils.like_photo(browser, user_id, photo_id):
+                        utils.like_photo(browser, user_id, photo_id)
 
         except selexcept.WebDriverException:
             print 'Lost session? Try to reconnect'
