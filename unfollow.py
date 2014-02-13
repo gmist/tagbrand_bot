@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from selenium.common import exceptions as selexcept
 import grab
 import conf
 import utils
@@ -30,7 +29,7 @@ def unfollow():
             try:
                 grab_.go(link)
                 div = grab_.doc.select(
-                        '/html/body/div/div[4]/div/div[2]/div[5]/div').one()
+                        '/html/body/div/div[4]/div/div[2]/div[*]/div').one()
                 id_ = div.attr('data-user')
             except grab.error.DataNotFound, ex:
                 print 'Skip %s - %s' % (link, ex)
