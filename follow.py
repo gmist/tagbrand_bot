@@ -47,20 +47,23 @@ def follow():
         user_id = None
         likes = []
         try:
+            grab_.go(link)
+            div = grab_.doc.select(
+                '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
+            user_id = div.attr('data-user')
             try:
-                grab_.go(link)
-                div = grab_.doc.select(
-                    '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
-                user_id = div.attr('data-user')
-                try:
-                    likes = grab_.doc.select(
-                        '//*[@id="content"]/div[*]/div[3]/div/div[1]')\
-                        .attr_list('photo-id')
-                except grab.error.DataNotFound, ex:
-                    likes = []
+                likes = grab_.doc.select(
+                    '//*[@id="content"]/div[*]/div[3]/div/div[1]')\
+                    .attr_list('photo-id')
             except grab.error.DataNotFound, ex:
-                print 'Skip %s - %s' % (link, ex)
-                continue
+                likes = []
+        except grab.error.DataNotFound, ex:
+            print 'Skip %s - %s' % (link, ex)
+            continue
+        except grab.error.GrabTimeoutError, ex:
+            print 'Skip %s - %s' % (link, ex)
+            continue
+        try:
             if user_id:
                 browser.execute_script(
                     '$.post(\
@@ -70,7 +73,8 @@ def follow():
                 for photo_id in likes:
                     if not utils.like_photo(browser, user_id, photo_id):
                         utils.like_photo(browser, user_id, photo_id)
-
+        except selexcept.TimeoutException, ex:
+            print 'Skip %s - %s' % (link, ex)
         except selexcept.WebDriverException:
             print 'Lost session? Try to reconnect'
             browser.quit()

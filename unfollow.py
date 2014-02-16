@@ -34,6 +34,9 @@ def unfollow():
             except grab.error.DataNotFound, ex:
                 print 'Skip %s - %s' % (link, ex)
                 continue
+            except grab.error.GrabTimeoutError, ex:
+                print 'Skip %s - %s' % (link, ex)
+                continue
         if id_:
             browser.execute_script(
             '$.post("http://tagbrand.com/followers/unfollow", {userId:%s});'\
