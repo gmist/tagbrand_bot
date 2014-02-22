@@ -50,6 +50,10 @@ def follow():
             grab_.go(link)
             div = grab_.doc.select(
                 '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]').one()
+            class_ = div.attr('class')
+            if 'userbuttons' in class_:
+                div = grab_.doc.select(
+                '//*[@id="content"]/div[1]/div[2]/div[*]/div[1]/div[1]').one()
             user_id = div.attr('data-user')
             try:
                 likes = grab_.doc.select(
